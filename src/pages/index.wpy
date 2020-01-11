@@ -1,0 +1,250 @@
+<style>
+  Page {
+    background-color: #383c42;
+  }
+  .main {
+    width: 670rpx;
+    margin: 40rpx auto 0;
+    background: #fff;
+    box-shadow: 0 0 2rpx 0 rgba(25, 29, 33, 0.15);
+    border-radius: 12rpx;
+    padding: 0 40rpx;
+    box-sizing: border-box;
+    position: relative;
+  }
+  .item {
+    border-bottom: 2rpx solid #F4F5F7;
+  }
+  .qrcode {
+    width: 590rpx;
+    margin: 0 auto;
+    padding: 50rpx 0 59rpx;
+    border-top: 2rpx solid #F4F5F7;
+  }
+  .qrcode > view, .qrcode > text {
+    text-align: center;
+  }
+  canvas {
+    margin: 58rpx auto 0;
+  }
+  .type {
+    margin-top: 24rpx;
+    font-size: 28rpx;
+    color: #585C64;
+    line-height: 32rpx;
+  }
+  .tips {
+    margin-top: 40rpx;
+    font-size: 24rpx;
+    color: #999BA1;
+    line-height: 28rpx;
+  }
+  .input-container {
+    padding: 10rpx 0 0 0;
+    width: 590rpx;
+    margin: 0 auto;
+    height: 102rpx;
+  }
+  .input-container > input {
+    display: inline-block;
+    height: 80rpx;
+    font-size: 28rpx;
+    color: #191D21;
+    line-height: 102rpx;
+    width: 450rpx;
+  }
+  .input-container > button {
+    width: 120rpx;
+    height: 60rpx;
+    font-size: 30rpx;
+    line-height: 60rpx;
+    display: inline-block;
+    float: right;
+    margin-top: 10rpx;
+  }
+  .arrow {
+    width: 28rpx;
+    height: 28rpx;
+    vertical-align: top;
+    margin-top: 36rpx;
+    float: right;
+  }
+  .round {
+    width: 24rpx;
+    height: 24rpx;
+    border-radius: 50%;
+    background-color: #383c42;
+    position: absolute;
+    top: 735rpx;
+  }
+  .left {
+    left: -12rpx;
+  }
+  .right {
+    right: -12rpx;
+  }
+  .intro {
+    width: 590rpx;
+    margin-top: 20rpx;
+  }
+  .intro > view{
+    color: #999BA1;
+    font-size: 28rpx;
+    line-height: 48rpx;
+    word-wrap: break-word;
+    margin-bottom: 8rpx;
+  }
+  .intro > .title {
+    font-size: 32rpx;
+    color: #191D21;
+    line-height: 50rpx;
+  }
+  
+  </style>
+<template>
+  <view class="container">
+    <view class="main">
+      <view class="qrcode item">
+        <canvas style="width: 200px; height: 200px;" canvas-id="myQrcode"></canvas>
+        <view class="tips">{{text}}</view>
+      </view>
+      <view class="input-container item">
+        <!-- <input bindinput="bindKeyInput" placeholder="输入支付金额"/> -->
+        <button type="default" size="{{defaultSize}}" bindtap="">支付</button>
+        <button type="default" size="{{defaultSize}}" bindtap="scanCode">扫码</button>
+      </view>
+      <view class="round left"></view>
+      <view class="round right"></view>
+      <view class="intro item">
+        <view class="title">说明：</view>
+        <view>1. 可自定义canvas宽高。</view>
+        <view>2. 支持修改二维码的计算模式、纠错级别、背景色、前景色。</view>
+        <view>3. 更多详细说明，请参考项目README。</view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import drawQrcode from 'weapp-qrcode'
+  const COLLECTION = 'connections'
+  let ctx = wx.createCanvasContext('myQrcode')
+  class Connection {
+    constructor(paras) {
+      this.db = wx.cloud.database()
+      this._id = 0
+      this.device1 = { }
+      this.device2 = { }
+      this.time1 = -1
+      this.time2 = -1
+    }
+    async init(paras) {
+      this.device1.openid = paras.device1.openid
+      this.device2.openid = paras.device2.openid
+      this.time1 = Date.now()
+      console.log('init connection with: %s, %s', this.device1.openid, this.device2.openid)
+      const res = await this.createConnection()
+      return res
+    }
+    async createConnection() {
+      let connection = {
+        device1OpenID: this.device1.openid,
+        device2OpenID: this.device2.openid
+      }
+      this.getTime2()
+      const res = await this.db.collection(COLLECTION)
+        .add({ data: connection })
+      this._id = res._id
+      return {
+        connection,
+        _id: res._id
+      }
+    }
+    getTime2() {
+      let that = this
+      const watcher = this.db.collection(COLLECTION)
+        // 筛选语句
+        .where({
+          // 填入当前用户 openid，或如果使用了安全规则，则 {openid} 即代表当前用户 openid
+          _id: that._id
+        })
+        // 发起监听
+        .watch({
+          onChange: function(snapshot) {
+            console.log('snapshot', snapshot)
+            that.time2 = Date.now()
+            drawQrcode({
+              width: 200,
+              height: 200,
+              ctx: ctx,
+              typeNumber: 6,
+              text: that.device2.openid
+            })
+            console.log(that.time1, that.time2)
+          },
+          onError: function(err) {
+            console.error('the watch closed because of error', err)
+          }
+        })// eslint-disable-line no-unused-vars
+    }
+  }
+
+  // import connection from '../modules/connection'
+  let connection = new Connection()
+
+  export default class Index extends wepy.page {
+    data = {
+      openid: ''
+    }
+
+    methods = {
+      scanCode(text) {
+        let that = this
+        wx.scanCode({
+          onlyFromCamera: true,
+          async success (res) {
+            const con = await connection.init({
+              device1: {
+                openid: res.result
+              },
+              device2: {
+                openid: that.openid
+              }
+            })
+            console.log('add %s record', con._id)
+          },
+          fail () {
+            console.log('fail')
+          }
+        })
+      }
+    }
+
+    async onLoad() {
+      console.log('on load')
+      const res = await this.getOpenID()
+      this.openid = res.result.openid
+      console.log('get openid: %s', this.openid)
+      this.genCode()
+    }
+    async getOpenID () {
+      const openid = await wx.cloud.callFunction({
+        name: 'getOpenID'
+      })
+      return openid
+    }
+    async genCode() {
+      this.draw(this.openid)
+    }
+    draw(text) {
+      drawQrcode({
+        width: 200,
+        height: 200,
+        ctx: ctx,
+        typeNumber: 6,
+        text: text
+      })
+    }
+  }
+</script>

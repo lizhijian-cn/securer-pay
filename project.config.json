@@ -1,0 +1,30 @@
+{
+	"description": "A WePY Template For Tencent Cloud Base",
+	"setting": {
+		"urlCheck": false,
+		"es6": false,
+		"enhance": false,
+		"postcss": false,
+		"minified": false,
+		"newFeature": true,
+		"coverView": true,
+		"nodeModules": false,
+		"autoAudits": false,
+		"checkInvalidKey": true,
+		"checkSiteMap": true,
+		"uploadWithSourceMap": true,
+		"babelSetting": {
+			"ignore": [],
+			"disablePlugins": [],
+			"outputPath": ""
+		}
+	},
+	"compileType": "miniprogram",
+	"appid": "wxfb1897898569d3eb",
+	"projectname": "wepy-tcb-demo",
+	"miniprogramRoot": "dist/",
+	"cloudfunctionRoot": "cloudfunctions/",
+	"simulatorType": "wechat",
+	"simulatorPluginLibVersion": {},
+	"condition": {}
+}

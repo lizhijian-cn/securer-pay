@@ -1,0 +1,36 @@
+<style lang="less">
+</style>
+
+<script>
+import 'wepy-async-function'
+import wepy from 'wepy'
+
+export default class extends wepy.app {
+  constructor () {
+    super()
+    this.use('promisify')
+  }
+  config = {
+    pages: [
+      'pages/index'
+    ],
+    window: {
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#fff',
+      navigationBarTitleText: 'WePY With TCB',
+      navigationBarTextStyle: 'black'
+    }
+  }
+
+  onLaunch() {
+    console.log('on launch')
+    if (!wx.cloud) {
+      console.error('请使用 2.2.3 或以上的基础库以使用云能力')
+    } else {
+      wx.cloud.init({
+        traceUser: true
+      })
+    }
+  }
+}
+</script>
